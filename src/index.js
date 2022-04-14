@@ -1,226 +1,289 @@
 /**
- * FORM.js 1.2.0
+ * form.js 1.2.0
  * MIT License
  * Copyright (c) 2021 sylvester ezenwata
- * https://github.com/sylezenwata/Form.git
+ * https://github.com/sylezenwata/form.git
+ *
+ * @dependency "github:sylezenwata/set"
  */
 
 "use strict";
-/**
- * constructor to handle form action
- * ie. validation, performance
- * @constructor
- */
-export default class Form {
-	constructor() {
-		/**
-		 * Initial basic data
-		 */
-		this.config = {
-			formDataFieldsType: ["input", "select", "textarea"],
-			formRequiredSelector: "form[data-validate='true']",
-			fieldsRequiredSelector: "[jsrequired='true']",
-			// regex of elements to be validated
-			regex: {
-				email: /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-				phone: /^([0])([7]|[8]|[9])([\d]){9}$/,
-				password: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,20}$/,
-			}
+
+class form {
+	constructor(init) {
+		// val if set.js is import
+		if (!window.set) {
+			throw new Error(
+				`form.js depends on set.js (https://github.com/sylezenwata/set.js)`
+			);
 		}
-		/**
-		 * object to store required fields when page loads
-		 * it stores data of each form with form's id as key and array of required field's jsname
-		 */
-		this.requiredFields = {}
-		/**
-		 * basic runtime functions
-		 */
-		this.readRequiredField();
-		this.observeFieldsWithPlaceholder();
+		// access set function
+		if ("function" !== typeof set && set.hasOwnProperty("__esModule")) {
+			set = set.set;
+		}
+
+		// Initial basic data
+		this.formSelector = "form[data-jsvalidate]";
+		this.fieldsRequiredSelector = "[jsrequired]";
+		this.fieldsWithPlaceholder = "[jsplaceholder]";
+		this.fieldsSwitchSelector = "[jstypeswitch]";
+		this.swithBtnSelector = "[data-switch-btn]";
+		this.dataFieldsType = [
+			"input:not([type='submit']):not([type='button'])",
+			"select",
+			"textarea",
+		];
+		this.regex = {
+			email:
+				/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+			phone: /^([0])([7]|[8]|[9])([\d]){9}$/,
+			password:
+				/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,20}$/,
+			default: /(.+)/,
+		};
+
+		// update init data
+		if (init && "object" === typeof init) {
+			Object.keys(init).forEach((e) => {
+				if (this.hasOwnProperty(e)) {
+					if (Array.isArray(this[e])) {
+						this[e] = [...new Set(this[e].concat(init[e]))];
+					} else if ("object" === typeof this[e]) {
+						Object.assign(this[e], init[e]);
+					} else {
+						this[e] = init[e];
+					}
+				}
+			});
+		}
+
+		// validated forms
+		this.validatedForms = {};
+	}
+
+	/**
+	 * function to initialize Form action
+	 */
+	init() {
+		this.observeFields();
 		this.observeFieldsToSwitch();
 		this.observeFormSubmit();
+		return this;
 	}
+
 	/**
-	 * function store required fields when page loads
+	 * function to validate fie
+	 * @param {Array|NodeList|Node} fields
+	 * @returns {Boolean}
 	 */
-	readRequiredField() {
-		// get all forms
-		const forms = SET.$(this.config.formRequiredSelector, true);
-		forms.forEach((eachForm) => {
-			// get each form id from id attribute
-			const formId = eachForm.attr("id");
-			// get all required fields from form
-			const fields = eachForm.getElem(this.config.fieldsRequiredSelector, true);
-			// define array with key of form id to store each of the form's required data
-			this.requiredFields[formId] = {
-				validated: false,
-				fields: [],
-			};
-			// loop and store each form field jsname in form array
-			fields.forEach((eachField) => {
-				this.requiredFields[formId].fields.push(eachField.attr("jsname"));
-			});
-		});
-	}
-	/**
-	 * function to validate form
-	 * @param formId
-	 */
-	validateForm(formId) {
-		// array to store found errors
+	validateFields(fields) {
+		if (!Array.isArray(fields) && !(fields instanceof NodeList)) {
+			fields = [fields];
+		}
+
 		let errors = [];
-		// get form fields
-		const formFields = SET.$(`#${formId} ${this.config.fieldsRequiredSelector}`,true);
-		// loop form fields
-		formFields.forEach((eachField) => {
-			const eachFieldName = eachField.attr("jsname");
-			const eachFieldValue = /^(span|div)$/.test(eachField.nodeName.toLowerCase()) ? eachField.innerText : eachField.value;
-			// if each field jsname attr in requiredFields
-			if (
-				this.requiredFields[formId].fields.filter((e) => e === eachFieldName)
-			) {
-				// validate with field jsname regex
-				const parentWrap = eachField.getParent("input-wrap");
-				if (!this.config.regex[eachFieldName].test(eachFieldValue.trim())) {
-					if (parentWrap.attr("data-error") === "false") {
-						parentWrap.attr("data-error", "true");
-						parentWrap.appendElem(
-								this.createFormError(
-									"Invalid " +
-										eachField.attr("jsvalidate").split("+").join(" or ")
-								)
-							);
-					}
-					errors.push(eachFieldName);
-				} else {
-					parentWrap.attr("data-error", "false");
-					// check if eachField parent has error element before removing error element
-					if (parentWrap.getElem(".form-input-error"))
-						SET.removeElem(
-							eachField.getParent('input-wrap').getElem('.form-input-error')
-						);
+
+		fields.forEach((eachField) => {
+			const eachFieldName = set(eachField).attr("jsname")[0];
+			const eachFieldValue = /^(span|div)$/.test(
+				eachField.nodeName.toLowerCase()
+			)
+				? eachField.innerText
+				: eachField.value;
+			const parentWrap = set(eachField).parent("[data-content]");
+
+			// val field value against jsname regex
+			const regex = this.regex[eachFieldName]
+				? this.regex[eachFieldName]
+				: this.regex.default;
+			if (!regex.test(eachFieldValue.trim())) {
+				parentWrap.data("error", "true");
+				if (!parentWrap.find("[data-form-input-error]")[0]) {
+					parentWrap.append(
+						this.createFormInputError(
+							`Invalid ${set(eachField)
+								.attr("jsvalidate")[0]
+								.split("+")
+								.join(" or ")}`
+						)
+					);
 				}
+				errors.push(eachFieldName);
+			} else {
+				parentWrap.data("error", "false");
+				parentWrap.remove("[data-form-input-error]");
 			}
+
+			this.setHasContent(eachField, eachFieldValue, parentWrap);
 		});
-		// returns true if no error found in form else false
+
 		return errors.length === 0;
 	}
+
 	/**
 	 * function to show form field error
 	 * @param errorInfo
 	 */
-	createFormError(errorInfo) {
-		return `<span class="form-input-error"><svg class="form-input-error-icon" focusable="false" width="16px" height="16px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path></svg><span>${errorInfo}</span></span>`;
+	createFormInputError(errorInfo) {
+		return `<div class="form-input-error" data-form-input-error><svg class="form-input-error-icon" focusable="false" width="16px" height="16px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path></svg><span>${errorInfo}</span></div>`;
 	}
+
 	/**
-	 * function to validate form before submission
+	 * function to check update data-content attr for fields with jsplaceholder
+	 * @param {Node} field
+	 * @param {String} value
 	 */
-	observeFormSubmit() {
-		const forms = SET.$("form", true);
-		forms.forEach((eachForm) => {
-			eachForm.on("submit", (e) => {
-				let formId = eachForm.attr("id");
-				if (this.requiredFields[formId]) {
-					if (this.validateForm(formId)) {
-						this.requiredFields[formId].validated = true;
-					} else {
-						// prevent form from submitting
-						e.preventDefault();
-						this.requiredFields[formId].validated = false;
-					}
-				}
-			});
-		});
-	}
-	/**
-	 * function to handle form elements with placeholder
-	 * This function with update element's parent (ie. div.input-wrapper) 'data-content' attr
-	 * with true if element has value, otherwise false
-	 */
-	observeFieldsWithPlaceholder() {
-		const fields = SET.$("[jsplaceholder]", true);
-		const setHasValue = (eachField) => {
-			const parentWrapper = eachField.getParent("input-wrap");
-			const fieldValue = "div" === eachField.nodeName.toLowerCase() ? eachField.innerText : eachField.value;
-			if (fieldValue.trim() !== "")
-				parentWrapper.attr("data-content", "true");
-			else 
-				parentWrapper.attr("data-content", "false");
+	setHasContent(field, value, parentWrap) {
+		if (set(field).attr(this.fieldsWithPlaceholder.replace(/[\[\]]/g, ""))[0]) {
+			if (value.trim() !== "") {
+				parentWrap.data("content", "true");
+			} else {
+				parentWrap.data("content", "false");
+			}
 		}
-		fields.forEach((field) => {
-			setHasValue(field);
-			field.on("blur", () => {
-				setHasValue(field);
-			});
-		});
 	}
+
 	/**
-	 * function to observe fields with jstypeswitch attr
+	 * function to observe required fields
+	 */
+	observeFields() {
+		set(document).on(
+			"blur",
+			`${this.formSelector} ${this.fieldsRequiredSelector}`,
+			(e) => this.validateFields(e.target),
+			true
+		);
+	}
+
+	/**
+	 * function to observe fields with switch btn
 	 */
 	observeFieldsToSwitch() {
-		const fields = SET.$("[jstypeswitch]", true);
+		set(document).on(
+			"click",
+			`${this.swithBtnSelector}`,
+			(e) => {
+				const field = set(e.target).sibling(this.fieldsSwitchSelector);
+				const currentType = field.attr("type")[0];
+				field[0].type = field.attr(this.fieldsSwitchSelector)[0];
+				field.attr(this.fieldsSwitchSelector, currentType);
+			},
+			true
+		);
+	}
+
+	/**
+	 * function to observe forms to validate before submission
+	 */
+	observeFormSubmit() {
+		set(document).on(
+			"submit",
+			`${this.formSelector}`,
+			(e) => {
+				const form = e.target;
+				let formId = form.id;
+				if (!formId) {
+					formId = this.genDynamicId(form);
+					form.id = formId;
+				}
+				if (
+					!this.validateFields(set(form).find(this.fieldsRequiredSelector)[0])
+				) {
+					e.preventDefault();
+					this.validatedForms[formId] = false;
+				} else {
+					this.validatedForms[formId] = true;
+				}
+			},
+			true
+		);
+	}
+
+	/**
+	 * function to generate dynamic id
+	 * @param {Node} form
+	 * @returns {String}
+	 */
+	genDynamicId(form) {
+		let formIndex = set(this.formSelector).map((e, i) => {
+			if (e === form) {
+				return `${i}`;
+			}
+		})[0];
+		return formIndex + Math.floor(Math.random() * 10e8);
+	}
+
+	/**
+	 * function to clear form data
+	 * @param {String|Node} formSelector
+	 * @param {Array|null} dataFieldsSelector
+	 */
+	reset(formSelector, dataFieldsSelector) {
+		dataFieldsSelector = dataFieldsSelector
+			? dataFieldsSelector.join()
+			: this.dataFieldsType.join();
+
+		const fields = set(formSelector).find(dataFieldsSelector)[0];
+
 		fields.forEach((eachField) => {
-			const switchBtn = eachField.getParent("input-wrap").getElem(".switch-action");
-			switchBtn.on("click", () => {
-				// get current field type
-				const currentType = eachField.type;
-				// change field type and update jstypeswitch attr
-				eachField.type = eachField.attr("jstypeswitch");
-				eachField.attr("jstypeswitch", currentType);
+			if (/^(span|div)$/.test(eachField.nodeName.toLowerCase())) {
+				eachField.innerText = "";
+			} else {
+				eachField.value = "";
+			}
+			set(eachField).parent("[data-content]").data("content", "false");
+		});
+	}
+
+	/**
+	 * function to get form data
+	 * @param {String} formSelector
+	 * @param {String} format - 'formdata' is default
+	 * @param {Array} exemptedFileds
+	 * @returns
+	 */
+	formData(formSelector, format, exemptedFileds) {
+		const validFormats = ["url", "formdata", "json"];
+
+		if (
+			"string" === typeof format &&
+			!validFormats.some((e) => e.toLowerCase() === format?.toLowerCase())
+		) {
+			throw new Error(`Valid formats are ${validFormats.join(" or ")}`);
+		}
+
+		let formData = new FormData(set(formSelector)[0]);
+
+		if (
+			exemptedFileds &&
+			[...formData.keys].some((e) => exemptedFileds.includes(e))
+		) {
+			exemptedFileds.forEach((exemption) => {
+				if ([...formData.keys].some((e) => e === exemption)) {
+					formData.delete(exemption);
+				}
 			});
-		});
-	}
-	/**
-	 * function to assemble form data
-	 * @param formSelector
-	 * @param fieldsType
-	 * @param format 'json','url','formData'
-	 */
-	assembleFormData(
-		formSelector,
-		format = "",
-		fieldsType = this.config.formDataFieldsType
-	) {
-		// define fields to extract data from
-		let stringFieldsType = fieldsType.join();
-		// var to store data based on format (either json or url params)
-		let data =
-			format === "formData" ? new FormData() : format === "url" ? "" : {};
-		// get and loop form data fields
-		const dataFields = SET.$(formSelector).getElem(stringFieldsType, true);
-		dataFields.forEach((eachField, eachFieldIndex) => {
-			const fieldValue = SET.existsInArray(eachField.nodeName.toLowerCase, [
-				"div",
-				"span",
-			])
-				? eachField.innerText
-				: eachField.value;
-			const fieldName = eachField.attr("name");
-			if (format === "formData") data.append(fieldName, fieldValue);
-			else if (format === "url")
-				data +=
-					eachFieldIndex > 0
-						? "&" + fieldName + "=" + fieldValue
-						: fieldName + "=" + fieldValue;
-			else data[fieldName] = fieldValue;
-		});
-		// return data
-		return data;
-	}
-	/**
-	 * function clear form data
-	 * @param {string|Node} formSelector 
-	 * @param {array} desiredFields 
-	 */
-	reset(formSelector, desiredFields = null) {
-		// define fields to extract data from
-		let stringFieldsType = desiredFields ? desiredFields.join() : this.config.formDataFieldsType.join();
-		// get and loop form data fields
-		const dataFields = SET.$(formSelector).getElem(stringFieldsType, true);
-		dataFields.forEach(eachField => {
-			// empty field
-			eachField.value = '';
-			eachField.getParent('input-wrap').attr('data-content', 'false');
-		});
+		}
+
+		if (format?.toLowerCase() === "url") {
+			return [...formData.entries()]
+				.map((entry) => {
+					let [key, value] = entry;
+					return `${key}=${value}`;
+				})
+				.join();
+		}
+
+		if (format?.toLowerCase() === "json") {
+			return [...formData.entries()].reduce((obj, entry) => {
+				let [key, value] = entry;
+				obj[key] = value;
+				return obj;
+			}, {});
+		}
+
+		return formData;
 	}
 }
+
+export { form };

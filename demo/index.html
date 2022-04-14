@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo form.js</title>
+    <style>
+        input {
+            margin-bottom: 10px;
+        }
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <form action="/jx/login" method="post" class="m-b-20" data-jsvalidate>
+        <div class="form b-s-low">
+            <div class="form-header">
+                <h1 class="text-c m-t-10">ABSU-Resource</h1>
+                <h2 class="text-c m-t-10">Login</h2>
+            </div>
+            <div class="form-body">
+                <input type="hidden" name="continue" value="">
+                <input type="hidden" name="allowsCookie" value="true">
+                <div class="input-wrap" data-error="false" data-content="false">
+                    <div class="form-input__wrap">
+                        <label class="form-input__label">
+                            <span class="input-label">Email or phone</span>
+                            <input type="text" class="form-input" jsplaceholder="true" name="identity" jsname="identifier" jsvalidate="email+phone" jsrequired>
+                        </label>
+                    </div>
+                </div>
+                <div class="input-wrap" data-error="false" data-content="false">
+                    <div class="form-input__wrap">
+                        <label class="form-input__label">
+                            <span class="input-label">Password</span>
+                            <input type="password" class="form-input" jsplaceholder="true" name="password" jsname="password" jsvalidate="password" jsrequired>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex justify-e m-t-10 position-r">
+                    <a href="/reset">Forgot Password?</a>
+                </div>
+                <div class="btn-wrap">
+                    <button type="submit" name="login" class="btn primary w-100">
+                        Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+    <script src="../node_modules/set/dist/set.min.js"></script>
+    <script src="../dist/form.min.js"></script>
+    <!-- <script src="../dist/form.min.js"></script> -->
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

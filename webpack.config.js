@@ -1,11 +1,14 @@
 module.exports = {
     mode: "production",
+    entry: `${__dirname}/src/index.js`,
     output: {
         path: `${__dirname}/dist`,
-        library: 'FORM',
-        libraryTarget: 'umd',
         filename: 'form.min.js',
-        auxiliaryComment: 'Test Comment',
+        library: {
+            name: 'form',
+            type: 'umd',
+        },
+        // auxiliaryComment: 'Test Comment',
         environment: {
 			arrowFunction: false
 		},
