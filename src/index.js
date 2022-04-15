@@ -14,7 +14,7 @@ class form {
 		// val if set.js is import
 		if (!window.set) {
 			throw new Error(
-				`form.js depends on set.js (https://github.com/sylezenwata/set.js)`
+				`form.js depends on set.js (https://github.com/sylezenwata/set.git)`
 			);
 		}
 		// access set function
