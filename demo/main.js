@@ -11,6 +11,20 @@ set("form").on("submit", function (e) {
 	// if (_form.validatedForms[])
 	if (_form.validatedForms[this.id]) {
 		e.preventDefault();
-		console.log(_form.formData(this, "json"));
+		set(this).disableForm();
+		set.ajax({
+			url: "https://jsonplaceholder.typicode.com/posts",
+			method: "POST",
+			body: _form.formData(this),
+			headers: {
+				"Content-Type": false,
+			}
+		})
+		.then(e => {
+			set(set(this).find('.form-header')[0][0]).append(`<p>${e}</p>`);
+			this.reset();
+		})
+		.catch(e => console.log(e))
+		.finally(() => set(this).disableForm(true));
 	}
 });

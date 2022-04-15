@@ -28,8 +28,8 @@ class form {
 		this.fieldsWithPlaceholder = "[jsplaceholder]";
 		this.fieldsSwitchSelector = "[jstypeswitch]";
 		this.swithBtnSelector = "[data-switch-btn]";
-		this.dataFieldsType = [
-			"input:not([type='submit']):not([type='button'])",
+		this.resetDataFieldsType = [
+			"input:not([type='hidden']):not([type='submit']):not([type='button'])",
 			"select",
 			"textarea",
 		];
@@ -221,7 +221,7 @@ class form {
 	reset(formSelector, dataFieldsSelector) {
 		dataFieldsSelector = dataFieldsSelector
 			? dataFieldsSelector.join()
-			: this.dataFieldsType.join();
+			: this.resetDataFieldsType.join();
 
 		const fields = set(formSelector).find(dataFieldsSelector)[0];
 
