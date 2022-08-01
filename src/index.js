@@ -27,7 +27,6 @@ class form {
 		// Initial basic data
 		this.formSelector = "form[data-jsvalidate]";
 		this.fieldsRequiredSelector = "[jsrequired]";
-		this.fieldsWithPlaceholder = "[jsplaceholder]";
 		this.fieldsSwitchSelector = "[jstypeswitch]";
 		this.swithBtnSelector = "[data-switch-btn]";
 		this.resetDataFieldsType = [
@@ -119,7 +118,7 @@ class form {
 				parentWrap.remove("[data-form-input-error]");
 			}
 
-			this.setHasContent(eachField, eachFieldValue, parentWrap);
+			this.setHasContent(eachFieldValue, parentWrap);
 		});
 
 		return errors.length === 0;
@@ -138,13 +137,11 @@ class form {
 	 * @param {Node} field
 	 * @param {String} value
 	 */
-	setHasContent(field, value, parentWrap) {
-		if (set(field).attr(this.fieldsWithPlaceholder.replace(/[\[\]]/g, ""))[0]) {
-			if (value.trim() !== "") {
-				parentWrap.data("content", "true");
-			} else {
-				parentWrap.data("content", "false");
-			}
+	setHasContent(value, parentWrap) {
+		if (value.trim() !== "") {
+			parentWrap.data("content", "true");
+		} else {
+			parentWrap.data("content", "false");
 		}
 	}
 
