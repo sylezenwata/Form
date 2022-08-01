@@ -7,12 +7,14 @@
  * @dependency "github:sylezenwata/set"
  */
 
-"use strict";
+import { set } from "set";
+
+("use strict");
 
 class form {
 	constructor(init) {
-		// val if set.js is import
-		if (!window.set) {
+		// val if set.js is imported
+		if (!window.set && !set) {
 			throw new Error(
 				`form.js depends on set.js (https://github.com/sylezenwata/set.git)`
 			);

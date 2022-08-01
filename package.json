@@ -23,9 +23,6 @@
     "url": "https://github.com/sylezenwata/form/issues"
   },
   "homepage": "https://github.com/sylezenwata/form#readme",
-  "dependencies": {
-    "set": "github:sylezenwata/set"
-  },
   "devDependencies": {
     "@babel/core": "^7.13.10",
     "@babel/plugin-transform-runtime": "^7.13.10",
@@ -36,5 +33,8 @@
     "url-loader": "^4.1.1",
     "webpack": "^5.27.1",
     "webpack-cli": "^4.5.0"
+  },
+  "dependencies": {
+    "set": "github:sylezenwata/set"
   }
 }

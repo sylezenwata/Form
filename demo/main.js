@@ -1,3 +1,5 @@
+set = set.set;
+
 const options = {
 	regex: {
 		identifie: /^(.+)$/,
