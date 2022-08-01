@@ -96,8 +96,7 @@ class form {
 			)
 				? eachField.innerText
 				: eachField.value;
-			const parentWrap = set(eachField).parent("[data-content]");
-
+			const parentWrap = set(eachField).parent("[data-error]");
 			// val field value against jsname regex
 			const regex = this.regex[eachFieldName]
 				? this.regex[eachFieldName]

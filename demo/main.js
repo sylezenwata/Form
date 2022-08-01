@@ -4,6 +4,7 @@ const options = {
 	regex: {
 		identifie: /^(.+)$/,
 		password: /^(.+)$/,
+		contactChannel: /^(.+)$/,
 	},
 	errorTag: {
 		partA: `<div class="form-input-error" data-form-input-error><span>`,
