@@ -131,7 +131,7 @@ class form {
 	 * @param errorInfo
 	 */
 	createFormInputError(errorInfo) {
-		return `${this.errorTag.partA}${errorInfo}${this.errorTag.partA}`;
+		return `${this.errorTag.partA}${errorInfo}${this.errorTag.partB}`;
 	}
 
 	/**
