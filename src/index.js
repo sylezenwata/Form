@@ -4,25 +4,20 @@
  * Copyright (c) 2021 sylvester ezenwata
  * https://github.com/sylezenwata/form.git
  *
- * @dependency "github:sylezenwata/set"
+ * @dependency [set]("github:sylezenwata/set")
  */
 
-import { set } from "set";
-
-("use strict");
-
 class form {
-	constructor(init) {
+	constructor(options) {
 		// val if set.js is imported
-		if (!window.set && !set) {
+		if (!window.set && !globalThis.set) {
 			throw new Error(
-				`form.js depends on set.js (https://github.com/sylezenwata/set.git)`
+				`form.js depends on set.js (https://github.com/sylezenwata/set.git), and must be defined in window or global scope`
 			);
 		}
-		// access set function
-		if ("function" !== typeof set && set.hasOwnProperty("__esModule")) {
-			set = set.set;
-		}
+
+		// set library
+		this.set = window.set || globalThis.set;
 
 		// Initial basic data
 		this.formSelector = "form[data-jsvalidate]";
@@ -47,16 +42,16 @@ class form {
 			default: /(.+)/,
 		};
 
-		// update init data
-		if (init && "object" === typeof init) {
-			Object.keys(init).forEach((e) => {
+		// update options data
+		if (options && "object" === typeof options) {
+			Object.keys(options).forEach((e) => {
 				if (this.hasOwnProperty(e)) {
 					if (Array.isArray(this[e])) {
-						this[e] = [...new Set(this[e].concat(init[e]))];
+						this[e] = [...new Set(this[e].concat(options[e]))];
 					} else if ("object" === typeof this[e]) {
-						Object.assign(this[e], init[e]);
+						Object.assign(this[e], options[e]);
 					} else {
-						this[e] = init[e];
+						this[e] = options[e];
 					}
 				}
 			});
@@ -89,13 +84,13 @@ class form {
 		let errors = [];
 
 		fields.forEach((eachField) => {
-			const eachFieldName = set(eachField).attr("jsname")[0];
+			const eachFieldName = this.set(eachField).attr("jsname")[0];
 			const eachFieldValue = /^(span|div)$/.test(
 				eachField.nodeName.toLowerCase()
 			)
 				? eachField.innerText
 				: eachField.value;
-			const parentWrap = set(eachField).parent("[data-error]");
+			const parentWrap = this.set(eachField).parent("[data-error]");
 			// val field value against jsname regex
 			const regex = this.regex[eachFieldName]
 				? this.regex[eachFieldName]
@@ -105,7 +100,7 @@ class form {
 				if (!parentWrap.find("[data-form-input-error]")[0]) {
 					parentWrap.append(
 						this.createFormInputError(
-							`Invalid ${set(eachField)
+							`Invalid ${this.set(eachField)
 								.attr("jsvalidate")[0]
 								.split("+")
 								.join(" or ")}`
@@ -149,7 +144,7 @@ class form {
 	 * function to observe required fields
 	 */
 	observeFields() {
-		set(document).on(
+		this.set(document).on(
 			"blur",
 			`${this.formSelector} ${this.fieldsRequiredSelector}`,
 			(e) => this.validateFields(e.target),
@@ -161,11 +156,11 @@ class form {
 	 * function to observe fields with switch btn
 	 */
 	observeFieldsToSwitch() {
-		set(document).on(
+		this.set(document).on(
 			"click",
 			`${this.swithBtnSelector}`,
 			(e) => {
-				const field = set(e.target).sibling(this.fieldsSwitchSelector);
+				const field = this.set(e.target).sibling(this.fieldsSwitchSelector);
 				const currentType = field.attr("type")[0];
 				field[0].type = field.attr(this.fieldsSwitchSelector)[0];
 				field.attr(this.fieldsSwitchSelector, currentType);
@@ -178,7 +173,7 @@ class form {
 	 * function to observe forms to validate before submission
 	 */
 	observeFormSubmit() {
-		set(document).on(
+		this.set(document).on(
 			"submit",
 			`${this.formSelector}`,
 			(e) => {
@@ -189,7 +184,7 @@ class form {
 					form.id = formId;
 				}
 				if (
-					!this.validateFields(set(form).find(this.fieldsRequiredSelector)[0])
+					!this.validateFields(this.set(form).find(this.fieldsRequiredSelector)[0])
 				) {
 					e.preventDefault();
 					this.validatedForms[formId] = false;
@@ -207,7 +202,7 @@ class form {
 	 * @returns {String}
 	 */
 	genDynamicId(form) {
-		let formIndex = set(this.formSelector).map((e, i) => {
+		let formIndex = this.set(this.formSelector).map((e, i) => {
 			if (e === form) {
 				return `${i}`;
 			}
@@ -225,7 +220,7 @@ class form {
 			? dataFieldsSelector.join()
 			: this.resetDataFieldsType.join();
 
-		const fields = set(formSelector).find(dataFieldsSelector)[0];
+		const fields = this.set(formSelector).find(dataFieldsSelector)[0];
 
 		fields.forEach((eachField) => {
 			if (/^(span|div)$/.test(eachField.nodeName.toLowerCase())) {
@@ -233,7 +228,7 @@ class form {
 			} else {
 				eachField.value = "";
 			}
-			set(eachField).parent("[data-content]").data("content", "false");
+			this.set(eachField).parent("[data-content]").data("content", "false");
 		});
 	}
 
@@ -246,16 +241,13 @@ class form {
 	 */
 	formData(formSelector, format, exemptedFileds) {
 		const validFormats = ["url", "formdata", "json"];
-
 		if (
 			"string" === typeof format &&
 			!validFormats.some((e) => e.toLowerCase() === format?.toLowerCase())
 		) {
 			throw new Error(`Valid formats are ${validFormats.join(" or ")}`);
 		}
-
-		let formData = new FormData(set(formSelector)[0]);
-
+		let formData = new FormData(this.set(formSelector)[0]);
 		if (
 			exemptedFileds &&
 			[...formData.keys].some((e) => exemptedFileds.includes(e))
@@ -266,7 +258,6 @@ class form {
 				}
 			});
 		}
-
 		if (format?.toLowerCase() === "url") {
 			return [...formData.entries()]
 				.map((entry) => {
@@ -275,7 +266,6 @@ class form {
 				})
 				.join();
 		}
-
 		if (format?.toLowerCase() === "json") {
 			return [...formData.entries()].reduce((obj, entry) => {
 				let [key, value] = entry;
@@ -283,9 +273,8 @@ class form {
 				return obj;
 			}, {});
 		}
-
 		return formData;
 	}
 }
 
-export { form };
+export default form;
