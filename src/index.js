@@ -1,5 +1,5 @@
 /**
- * form.js 2.0.1
+ * form.js 2.0.2
  * MIT License
  * Copyright (c) 2021 sylvester ezenwata
  * https://github.com/sylezenwata/form.git
